@@ -171,6 +171,18 @@ async function mostrarNavesEspaciales(urls){
     agregar("Naves espaciales: ", toString(navesEspaciales), "tabla");
 }
 
+async function mostrarResidentes(urls){
+    var residentes = [];
+    for (let i = 0; i<urls.length;i++){
+        await fetch(urls[i])
+        .then(res => res.json())
+        .then(data=> {
+            residentes.push(data.name)
+        })
+    }
+    agregar("Residentes: ", toString(residentes), "tabla");
+}
+
 function explicacion(){
     borrarYAgregar("", "", "tabla")
     let intro = document.createElement("p");
