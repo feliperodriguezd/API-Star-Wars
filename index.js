@@ -2,12 +2,25 @@ window.addEventListener("load", inicio);
 
 function inicio(){
 	document.getElementById("boton").addEventListener("click", click);
-	document.getElementById("tabla").addEventListener("click", mostrarPersonajeCorrecto);
+	document.getElementById("tabla").addEventListener("click", mostrarCorrecto);
     document.getElementById("frase").addEventListener("keypress", function(event){
         if (event.key=="Enter"){
             click()
         }
     })
+}
+
+function mostrarCorrecto(){
+    let tabla = document.getElementById("tabla");
+    let nombreClaseTabla = tabla.className
+    switch (nombreClaseTabla){
+        case "people": 
+            mostrarPersonajeCorrecto();
+        break;
+        case "planets": 
+            mostrarPlanetaCorrecto()
+        break;
+    }
 }
 
 function agregar(que, info){
@@ -23,11 +36,53 @@ function borrarYAgregar(que, info, donde){
     let tablaPantalla= document.getElementById(donde);
     tablaPantalla.innerHTML = ""
     agregar(que, info)
+    if (donde == "tabla"){
+        tablaPantalla.setAttribute("class", "");
+    }
+}
+
+async function masParecido(nombre, que){
+    var respuesta = "";
+    var cantidad = 0;
+    var urlLugar = 1;
+    var fin = false;
+    while(!fin){
+        try{
+            var carga = "Cargando"
+            for (var i = 0; i<urlLugar;i++){
+                carga = carga + "."
+            }
+            borrarYAgregar(carga,"", "tabla")
+            await fetch('https://swapi.dev/api/' + que + '/?page=' + urlLugar)
+            .then(res => res.json())
+            .then(data=> {
+                data.results.forEach(persona=>{
+                    var recorrido = 0;
+                    var auxCant = 0;
+                    while (nombre.length>recorrido && persona.name.length>recorrido){
+                        if (nombre[recorrido].toUpperCase()==persona.name[recorrido].toUpperCase()){
+                            auxCant++
+                        }
+                        recorrido++
+                    }
+                    if (auxCant>cantidad){
+                        cantidad = auxCant
+                        respuesta = persona.name
+                    }
+                })
+                    urlLugar++;
+            })
+        } catch (e) {
+            fin = true;
+        }
+    }
+    borrarYAgregar("Quizas quisite decir: " + respuesta, "", "tabla")
+    let tabla = document.getElementById("tabla");
+    tabla.setAttribute("class", que);
 }
 
 async function listaFiltrada(comando){
-    let tablaPantalla= document.getElementById("tabla");
-    tablaPantalla.innerHTML = ""
+    borrarYAgregar("", "", "tabla")
     var filtro = comando.split(":")
     var fin = false;
     var urlLugar = 1;
@@ -173,6 +228,8 @@ function click(){
         }
     } else if (comando[0].toLowerCase()=="personaje"){ 
         revisarPersonas(1, comando[1]);
+    } else if (comando[0].toLowerCase()=="planeta"){
+        revisarPlaneta(1, comando[1]);
     } else if (comando[0].toLowerCase()=="ayuda"){
         explicacion();
     } else {

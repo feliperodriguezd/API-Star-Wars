@@ -39,52 +39,13 @@ async function revisarPersonas (urlLugar, nombre){
         if (!encontro && data.next!=null){
             revisarPersonas(urlLugar+1, nombre)
         } else if (data.next==null && !encontro){
-            masParecido(nombre)
+            masParecido(nombre, "people")
         }
     })
 }
 
-async function masParecido(nombre){
-    var respuesta = "";
-    var cantidad = 0;
-    var urlLugar = 1;
-    var fin = false;
-    while(!fin){
-        try{
-            var carga = "Cargando"
-            for (var i = 0; i<urlLugar;i++){
-                carga = carga + "."
-            }
-            borrarYAgregar(carga,"", "tabla")
-            await fetch('https://swapi.dev/api/people/?page='+urlLugar)
-            .then(res => res.json())
-            .then(data=> {
-                data.results.forEach(persona=>{
-                    var recorrido = 0;
-                    var auxCant = 0;
-                    while (nombre.length>recorrido && persona.name.length>recorrido){
-                        if (nombre[recorrido].toUpperCase()==persona.name[recorrido].toUpperCase()){
-                            auxCant++
-                        }
-                        recorrido++
-                    }
-                    if (auxCant>cantidad){
-                        cantidad = auxCant
-                        respuesta = persona.name
-                    }
-                })
-                    urlLugar++;
-            })
-        } catch (e) {
-            fin = true;
-        }
-    }
-    borrarYAgregar("Quizas quisite decir: " + respuesta, "", "tabla")
-}
-
 function mostrarPersona(persona){
-    let tablaPantalla= document.getElementById("tabla");
-    tablaPantalla.innerHTML = ""
+    borrarYAgregar("", "", "tabla")
     if (persona.name!="n/a"){
         agregar("Nombre:", JSON.stringify(persona.name))
     }
