@@ -49,6 +49,9 @@ function mostrarPlaneta(planeta){
     if (planeta.population!="N/A"){
         agregar("Población:", JSON.stringify(planeta.population))
     }
+    if (planeta.residents.length!=0){
+        mostrarResidentes(planeta.residents);
+    }
     if (planeta.films.length!=0){
         mostrarPeliculas(planeta.films);
     }
