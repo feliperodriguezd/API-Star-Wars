@@ -76,9 +76,7 @@ async function masParecido(nombre, que){
             fin = true;
         }
     }
-    borrarYAgregar("Quizas quisite decir: " + respuesta, "", "tabla")
-    let tabla = document.getElementById("tabla");
-    tabla.setAttribute("class", que);
+    return respuesta;
 }
 
 async function listaFiltrada(comando){
@@ -119,12 +117,14 @@ async function esEspecie(persona, especie){
     }
 }
 
-async function mostrarEspecie(especie){
-    await fetch(especie)
+async function mostrarEspecie(url){
+    var especie = null;
+    await fetch(url)
     .then(res => res.json())
     .then(data=> {
-        agregar("Especie: ", JSON.stringify(data.name))
+        especie = JSON.stringify(data.name)
     })
+    return especie;
 }
 
 async function mostrarPeliculas(urls){
@@ -136,15 +136,17 @@ async function mostrarPeliculas(urls){
             peliculasAparece.push(data.title)
         })
     }
-    agregar("Peliculas: ", toString(peliculasAparece), "tabla");
+    return peliculasAparece;
 }
 
 async function mostrarPlanetaDeNacimiento(url){
+    var planeta = null;
     await fetch(url)
     .then(res => res.json())
     .then(data =>{
-        agregar("Planeta de nacimiento: ", JSON.stringify(data.name), "tabla")
+        planeta = JSON.stringify(data.name);
     })
+    return planeta;
 }
 
 async function mostrarVehiculos(urls){
@@ -156,7 +158,7 @@ async function mostrarVehiculos(urls){
             vehiculosAparece.push(data.name)
         })
     }
-    agregar("Vehiculos: ", toString(vehiculosAparece), "tabla");
+    return vehiculosAparece;
 }
 
 async function mostrarNavesEspaciales(urls){
@@ -168,7 +170,7 @@ async function mostrarNavesEspaciales(urls){
             navesEspaciales.push(data.name)
         })
     }
-    agregar("Naves espaciales: ", toString(navesEspaciales), "tabla");
+    return navesEspaciales;
 }
 
 async function mostrarResidentes(urls){
@@ -180,7 +182,7 @@ async function mostrarResidentes(urls){
             residentes.push(data.name)
         })
     }
-    agregar("Residentes: ", toString(residentes), "tabla");
+    return residentes;
 }
 
 function explicacion(){
@@ -222,7 +224,13 @@ function toString(array){
     return respuesta;
 }
 
-function click(){
+function mostrarParecido(nombre, que){
+    borrarYAgregar("Quizas quisite decir: " + nombre, "", "tabla")
+    let tabla = document.getElementById("tabla");
+    tabla.setAttribute("class", que);
+}
+
+async function click(){
     var comando = document.getElementById("frase").value.split("/")
     var textoAyuda = document.getElementsByClassName("ayuda")
     if (textoAyuda.length!=0){
@@ -239,9 +247,22 @@ function click(){
             }
         }
     } else if (comando[0].toLowerCase()=="personaje"){ 
-        revisarPersonas(1, comando[1]);
+        var persona = await revisarPersonas(1, comando[1]);
+        if (persona != null){
+            mostrarPersona(persona);
+        } else {
+            persona = await masParecido(comando[1], "people")
+            mostrarParecido(persona, "people");
+        }
+
     } else if (comando[0].toLowerCase()=="planeta"){
-        revisarPlaneta(1, comando[1]);
+        var planeta = await revisarPlaneta(1, comando[1]);
+        if (planeta != null){
+            mostrarPlaneta(persona);
+        } else {
+            var planeta = await masParecido(comando[1], "planets")
+            mostrarParecido(planeta, "planets");
+        }
     } else if (comando[0].toLowerCase()=="ayuda"){
         explicacion();
     } else {

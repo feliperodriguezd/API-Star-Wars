@@ -1,4 +1,6 @@
 async function revisarPlaneta(urlLugar, nombre){
+    var respuesta = null;
+    var encontro = false;
     var carga = "Cargando"
     for (var i = 0; i<urlLugar;i++){
         carga = carga + "."
@@ -7,23 +9,21 @@ async function revisarPlaneta(urlLugar, nombre){
     await fetch('https://swapi.dev/api/planets/?page='+urlLugar)
     .then(res => res.json())
     .then(data=> {
-        var encontro = false;
         data.results.forEach(planeta => {
             if (nombre.toUpperCase() == planeta.name.toUpperCase() && !encontro){
-                mostrarPlaneta(planeta);
+                respuesta = planeta;
                 encontro = true;
             }
         })
-        if (!encontro && data.next!=null){
-            revisarPlaneta(urlLugar+1, nombre)
-        } else if (data.next==null && !encontro){
-            masParecido(nombre, "planets")
+        if (data.next!=null && !encontro){
+            respuesta = revisarPlaneta(urlLugar+1, nombre)
         }
     })
+    return respuesta;
 }
 
 
-function mostrarPlaneta(planeta){
+async function mostrarPlaneta(planeta){
     borrarYAgregar("", "", "tabla")
     if (planeta.name!="N/A"){
         agregar("Nombre:", JSON.stringify(planeta.name))
@@ -50,21 +50,24 @@ function mostrarPlaneta(planeta){
         agregar("Población:", JSON.stringify(planeta.population))
     }
     if (planeta.residents.length!=0){
-        mostrarResidentes(planeta.residents);
+        var residentes = await mostrarResidentes(planeta.residents);
+        agregar("Residentes: ", toString(residentes), "tabla");
     }
     if (planeta.films.length!=0){
-        mostrarPeliculas(planeta.films);
+        var peliculas = await mostrarPeliculas(planeta.films);
+        agregar("Peliculas: ", toString(peliculas), "tabla");
     }
 
 }
 
 
-function mostrarPlanetaCorrecto(){
+async function mostrarPlanetaCorrecto(){
     let tabla= document.getElementById("tabla"); 
     let textoTabla = tabla.textContent
     let frase = textoTabla.substring(textoTabla.indexOf("Quizas quisite decir:"), textoTabla.indexOf("Quizas quisite decir:")+21)
     let nombre = textoTabla.substring(textoTabla.indexOf("Quizas quisite decir: ")+22, textoTabla.length)
     if (frase == "Quizas quisite decir:"){
-        revisarPlaneta(1, nombre) 
+        var planeta = await revisarPlaneta(1, nombre);
+        mostrarPlaneta(planeta);
     }
 }
