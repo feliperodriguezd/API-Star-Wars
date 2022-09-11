@@ -270,3 +270,7 @@ async function click(){
     }
     
 }
+
+function prueba(){
+    
+}

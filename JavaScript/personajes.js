@@ -1,4 +1,3 @@
-
 async function todosLosPersonajes(){
     let tablaPantalla= document.getElementById("tabla");
     tablaPantalla.innerHTML = ""
