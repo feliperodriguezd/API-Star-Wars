@@ -1,5 +1,11 @@
 window.addEventListener("load", inicio);
 
+let datosPersonajesYaCargados = false;
+let ListaPersonajes = new listaPersonajes();
+let datosPlanetasYaCargados = false;
+let ListaPlanetas = new listaPlanetas();
+
+
 function inicio(){
 	document.getElementById("boton").addEventListener("click", click);
 	document.getElementById("tabla").addEventListener("click", mostrarCorrecto);
@@ -8,6 +14,45 @@ function inicio(){
             click()
         }
     })
+}
+
+async function guardarDatos(que){
+    var queLista;
+    switch (que) {
+        case "people":
+          queLista = ListaPersonajes;
+          break;
+        case "planets":
+          queLista = ListaPlanetas;
+          break;
+      }
+    var fin = false;
+    var urlLugar = 1;
+    while(!fin){
+        var carga = "Cargando"
+        for (var i = 0; i<urlLugar;i++){
+            carga = carga + "."
+        }
+        borrarYAgregar(carga,"", "tabla")
+        await fetch('https://swapi.dev/api/' + que + '/?page='+urlLugar)
+        .then(res => res.json())
+        .then(data=> {
+            data.results.forEach(personaje=>{
+                queLista.agregar(personaje);
+            })
+            urlLugar++;
+            if (data.next==null){
+                fin = true;
+            }
+        })
+        .catch((Error)=>{
+            guardarDatos(que);
+            queLista.borrarDatos();
+        })
+    }
+    borrarYAgregar("Fin guardar datos", "", "tabla")
+    console.log(ListaPersonajes.getListaPersonajes())
+    console.log(ListaPlanetas.getListaPlanetas())
 }
 
 function mostrarCorrecto(){
@@ -41,79 +86,43 @@ function borrarYAgregar(que, info, donde){
     }
 }
 
-async function masParecido(nombre, que){
+function masParecido(lista, nombre, que){
     var respuesta = "";
     var cantidad = 0;
-    var urlLugar = 1;
-    var fin = false;
-    while(!fin){
-        try{
-            var carga = "Cargando"
-            for (var i = 0; i<urlLugar;i++){
-                carga = carga + "."
+    for (let i = 0; i<lista.length; i++){
+        var recorrido = 0;
+        var auxCant = 0;
+        while (nombre.length>recorrido && lista[i].name.length>recorrido){
+            if (nombre[recorrido].toUpperCase()==lista[i].name[recorrido].toUpperCase()){
+                auxCant++
             }
-            borrarYAgregar(carga,"", "tabla")
-            await fetch('https://swapi.dev/api/' + que + '/?page=' + urlLugar)
-            .then(res => res.json())
-            .then(data=> {
-                data.results.forEach(persona=>{
-                    var recorrido = 0;
-                    var auxCant = 0;
-                    while (nombre.length>recorrido && persona.name.length>recorrido){
-                        if (nombre[recorrido].toUpperCase()==persona.name[recorrido].toUpperCase()){
-                            auxCant++
-                        }
-                        recorrido++
-                    }
-                    if (auxCant>cantidad){
-                        cantidad = auxCant
-                        respuesta = persona.name
-                    }
-                })
-                    urlLugar++;
-            })
-        } catch (e) {
-            fin = true;
+            recorrido++
+        }
+        if (auxCant>cantidad){
+            cantidad = auxCant
+            respuesta = lista[i].name
         }
     }
     return respuesta;
 }
 
-async function listaFiltrada(comando){
+async function listaFiltrada(lista, comando){
+    let tablaPantalla = document.getElementById("tabla");
     borrarYAgregar("", "", "tabla")
     var filtro = comando.split(":")
-    var fin = false;
-    var urlLugar = 1;
     if (filtro[0]=="especie"){
-        while(!fin){
-            try{
-                await fetch('https://swapi.dev/api/people/?page='+urlLugar)
-                .then(res => res.json())
-                .then(data=> {
-                    data.results.forEach(persona=>{
-                        esEspecie(persona, filtro[1])
-                    })
-                    urlLugar++;
-                })
-            } catch (e) {
-                fin = true;
+        for (let i = 0; i<lista.length; i++){
+            if (lista[i].species.length>0){
+                var especie = await mostrarEspecie(lista[i].species);
+                if (filtro[1].toUpperCase()== especie.slice(1, -1).toUpperCase()){
+                    agregar(lista[i].name, "");
+                }
             }
         }
+        agregar("Fin", "");
     }
     if (tablaPantalla.innerHTML==""){
         agregar("No se encontro ningun personaje de esa especie.", "");
-    }
-}
-
-async function esEspecie(persona, especie){
-    if (persona.species.length!=0){
-        await fetch(persona.species[0])
-        .then(res => res.json())
-        .then(data=> {
-            if (data.name.toUpperCase()==especie.toUpperCase()){
-                agregar(persona.name, "")
-            }
-        })
     }
 }
 
@@ -239,28 +248,47 @@ async function click(){
         }
     }
     if (comando[0].toLowerCase()=="lista"){
-        if (comando[1].toLowerCase()=="personajes"){
-            if (comando[2]!=null && comando[2].toLowerCase()=="filtrar"){    
-                listaFiltrada(comando[3])
-            } else { 
-                todosLosPersonajes();
+        if (comando[1].toLowerCase() == "personajes"){
+            if (!datosPersonajesYaCargados){
+                await guardarDatos("people");
+                datosPersonajesYaCargados = true;
             }
+            if (comando[2]!=null && comando[2].toLowerCase()=="filtrar"){    
+                listaFiltrada(ListaPersonajes.getListaPersonajes(), comando[3])
+            } else {
+                borrarYAgregar("", "", "tabla");
+                ListaPersonajes.todosLosPersonajes();
+            }
+        } else if (comando[1].toLowerCase() == "planetas"){
+            if (!datosPlanetasYaCargados){
+                await guardarDatos("planets");
+                datosPlanetasYaCargados = true;
+            }
+            borrarYAgregar("", "", "tabla");
+            ListaPlanetas.todosLosPlanetas();
         }
-    } else if (comando[0].toLowerCase()=="personaje"){ 
-        var persona = await revisarPersonas(1, comando[1]);
+    } else if (comando[0].toLowerCase()=="personaje"){
+        if (!datosPersonajesYaCargados){
+            await guardarDatos("people");
+            datosPersonajesYaCargados = true;
+        }
+        var persona = buscarObjeto(ListaPersonajes.getListaPersonajes(), comando[1]);
         if (persona != null){
             mostrarPersona(persona);
         } else {
-            persona = await masParecido(comando[1], "people")
+            persona = masParecido(ListaPersonajes.getListaPersonajes(), comando[1], "people")
             mostrarParecido(persona, "people");
         }
-
     } else if (comando[0].toLowerCase()=="planeta"){
-        var planeta = await revisarPlaneta(1, comando[1]);
+        if (!datosPlanetasYaCargados){
+            await guardarDatos("planets");
+            datosPlanetasYaCargados = true;
+        }
+        var planeta = buscarObjeto(ListaPlanetas.getListaPlanetas(), comando[1]);
         if (planeta != null){
-            mostrarPlaneta(persona);
+            mostrarPlaneta(planeta);
         } else {
-            var planeta = await masParecido(comando[1], "planets")
+            var planeta = masParecido(ListaPlanetas.getListaPlanetas(), comando[1], "planets")
             mostrarParecido(planeta, "planets");
         }
     } else if (comando[0].toLowerCase()=="ayuda"){
@@ -268,9 +296,5 @@ async function click(){
     } else {
         borrarYAgregar("Error al escribir comando, escriba ayuda para ver una guía de cómo hacerlo.", "", "tabla")
     }
-    
-}
-
-function prueba(){
     
 }
