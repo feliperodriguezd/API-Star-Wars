@@ -1,28 +1,3 @@
-async function revisarPlaneta(urlLugar, nombre){
-    var respuesta = null;
-    var encontro = false;
-    var carga = "Cargando"
-    for (var i = 0; i<urlLugar;i++){
-        carga = carga + "."
-    }
-    borrarYAgregar(carga,"", "tabla")
-    await fetch('https://swapi.dev/api/planets/?page='+urlLugar)
-    .then(res => res.json())
-    .then(data=> {
-        data.results.forEach(planeta => {
-            if (nombre.toUpperCase() == planeta.name.toUpperCase() && !encontro){
-                respuesta = planeta;
-                encontro = true;
-            }
-        })
-        if (data.next!=null && !encontro){
-            respuesta = revisarPlaneta(urlLugar+1, nombre)
-        }
-    })
-    return respuesta;
-}
-
-
 async function mostrarPlaneta(planeta){
     borrarYAgregar("", "", "tabla")
     if (planeta.name!="N/A"){
@@ -60,14 +35,13 @@ async function mostrarPlaneta(planeta){
 
 }
 
-
-async function mostrarPlanetaCorrecto(){
+function mostrarPlanetaCorrecto(){
     let tabla= document.getElementById("tabla"); 
     let textoTabla = tabla.textContent
     let frase = textoTabla.substring(textoTabla.indexOf("Quizas quisite decir:"), textoTabla.indexOf("Quizas quisite decir:")+21)
     let nombre = textoTabla.substring(textoTabla.indexOf("Quizas quisite decir: ")+22, textoTabla.length)
     if (frase == "Quizas quisite decir:"){
-        var planeta = await revisarPlaneta(1, nombre);
+        var planeta = buscarObjeto(ListaPlanetas.getListaPlanetas(), nombre);
         mostrarPlaneta(planeta);
     }
 }
